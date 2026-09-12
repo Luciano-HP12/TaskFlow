@@ -1,0 +1,70 @@
+// use prisma-8
+
+types {
+  Uuid = Uuid
+}
+
+enum TaskStatus {
+  @@type("pg/text@1")
+
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TaskPriority {
+  @@type("pg/text@1")
+
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model User {
+  id           Uuid       @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+
+  tasks        Task[]
+  categories   Category[]
+
+  createdAt    TimestamptzString @default(now())
+  updatedAt    temporal.updatedAtString()
+}
+
+model Category {
+  id        Uuid   @id @default(uuid())
+  name      String
+
+  userId    Uuid
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tasks     Task[]
+
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+
+  @@unique([userId, name])
+}
+
+model Task {
+  id          Uuid         @id @default(uuid())
+  title       String
+  description String?
+
+  status      TaskStatus   @default(PENDING)
+  priority    TaskPriority @default(MEDIUM)
+
+  dueDate     TimestamptzString?
+  completedAt TimestamptzString?
+
+  userId      Uuid
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId  Uuid?
+  category    Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+}
