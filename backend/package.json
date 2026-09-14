@@ -14,7 +14,10 @@
   "type": "module",
   "dependencies": {
     "@prisma/orm-postgres": "^8.0.0-rc.10",
-    "dotenv": "^17.4.2"
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "jsonwebtoken": "^9.0.3",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@prisma/cli-engine": "^0.3.0",

@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import authRoutes from "./routes/auth.routes.js";
 
 const app = express();
 
@@ -12,5 +13,7 @@ app.get("/api/health", (req, res) => {
     message: "TaskFlow API funcionando",
   });
 });
+
+app.use("/api/auth", authRoutes);
 
 export default app;
