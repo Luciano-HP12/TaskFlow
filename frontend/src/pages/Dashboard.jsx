@@ -1,5 +1,6 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+
 
 function Dashboard() {
   const { user, logout } = useAuth();
@@ -22,13 +23,22 @@ function Dashboard() {
             Bienvenido, {user.name}.
           </p>
         </div>
+        
+        <div className="flex gap-2">
+          <Link
+            to="/tasks"
+            className="rounded-lg border px-4 py-2"
+          >
+            Ver tareas
+          </Link>
 
-        <button
-          onClick={handleLogout}
-          className="rounded-lg bg-black px-4 py-2 text-white"
-        >
-          Cerrar sesión
-        </button>
+          <button
+            onClick={handleLogout}
+            className="rounded-lg bg-black px-4 py-2 text-white"
+          >
+            Cerrar sesión      
+          </button>
+          </div>
       </div>
     </main>
   );
