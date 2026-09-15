@@ -5,6 +5,7 @@ import {
   getTaskById,
   updateTask,
 } from "../services/task.service";
+import { getCategories } from "../services/category.service";
 
 function TaskForm() {
   const navigate = useNavigate();
@@ -13,15 +14,17 @@ function TaskForm() {
   const editing = Boolean(id);
 
   const [form, setForm] = useState({
-    title: "",
-    description: "",
-    priority: "MEDIUM",
-    dueDate: "",
+  title: "",
+  description: "",
+  priority: "MEDIUM",
+  dueDate: "",
+  categoryId: "",
   });
 
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     if (!editing) {
@@ -39,6 +42,7 @@ function TaskForm() {
           dueDate: task.dueDate
             ? task.dueDate.slice(0, 16)
             : "",
+            categoryId: task.categoryId ?? "",
         });
       } catch (error) {
         setError(error.message);
@@ -49,6 +53,19 @@ function TaskForm() {
 
     loadTask();
   }, [editing, id]);
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const data = await getCategories();
+        setCategories(data);
+      } catch (error) {
+        setError(error.message);
+      }
+    }
+
+    loadCategories();
+  }, []);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -73,6 +90,7 @@ function TaskForm() {
         dueDate: form.dueDate
           ? new Date(form.dueDate).toISOString()
           : null,
+          categoryId: form.categoryId || null,
       };
 
       if (editing) {
@@ -178,6 +196,42 @@ function TaskForm() {
             <option value="MEDIUM">Media</option>
             <option value="HIGH">Alta</option>
           </select>
+        </div>
+
+        <div>
+          <label
+            htmlFor="categoryId"
+            className="mb-1 block font-medium"
+          >
+            Categoría
+          </label>
+
+          <select
+            id="categoryId"
+            name="categoryId"
+            value={form.categoryId}
+            onChange={handleChange}
+            className="w-full rounded-lg border p-3"
+          >
+            <option value="">
+              Sin categoría
+            </option>
+
+            {categories.map((category) => (
+              <option
+                key={category.id}
+                value={category.id}
+              >
+                {category.name}
+              </option>
+            ))}
+          </select>
+
+          {categories.length === 0 && (
+            <p className="mt-2 text-sm text-gray-500">
+              Todavía no tienes categorías creadas.
+            </p>
+          )}
         </div>
 
         <div>

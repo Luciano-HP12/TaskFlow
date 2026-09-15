@@ -32,6 +32,13 @@ function Dashboard() {
             Ver tareas
           </Link>
 
+          <Link
+            to="/categories"
+            className="rounded-lg border px-4 py-2"
+          >
+            Categorías
+          </Link>
+
           <button
             onClick={handleLogout}
             className="rounded-lg bg-black px-4 py-2 text-white"

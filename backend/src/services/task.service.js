@@ -1,6 +1,21 @@
 import { db } from "../prisma/db.ts";
 
 export async function createTask(userId, taskData) {
+  if (taskData.categoryId) {
+    const category = await db.orm.public.Category
+      .where({
+        id: taskData.categoryId,
+        userId,
+      })
+      .first();
+
+    if (!category) {
+      const error = new Error("Categoría no encontrada");
+      error.statusCode = 404;
+      throw error;
+    }
+  }
+
   const task = await db.orm.public.Task.create({
     title: taskData.title,
     description: taskData.description ?? null,
@@ -50,6 +65,21 @@ export async function updateTask(userId, taskId, taskData) {
     const error = new Error("Tarea no encontrada");
     error.statusCode = 404;
     throw error;
+  }
+
+  if (taskData.categoryId) {
+    const category = await db.orm.public.Category
+      .where({
+        id: taskData.categoryId,
+        userId,
+      })
+      .first();
+
+    if (!category) {
+      const error = new Error("Categoría no encontrada");
+      error.statusCode = 404;
+      throw error;
+    }
   }
 
   const task = await db.orm.public.Task

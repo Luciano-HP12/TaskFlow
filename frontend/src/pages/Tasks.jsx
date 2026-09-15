@@ -5,22 +5,42 @@ import {
   getTasks,
   updateTaskStatus,
 } from "../services/task.service";
+import { getCategories } from "../services/category.service";
 
 function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [categories, setCategories] = useState([]);
 
   async function loadTasks() {
     try {
       setError("");
-      const data = await getTasks();
-      setTasks(data);
+
+      const [tasksData, categoriesData] = await Promise.all([
+        getTasks(),
+        getCategories(),
+      ]);
+
+      setTasks(tasksData);
+      setCategories(categoriesData);
     } catch (error) {
       setError(error.message);
     } finally {
       setLoading(false);
     }
+  }
+
+  function getCategoryName(categoryId) {
+    if (!categoryId) {
+      return "Sin categoría";
+    }
+
+    const category = categories.find(
+      (category) => category.id === categoryId
+    );
+
+    return category?.name ?? "Sin categoría";
   }
 
   useEffect(() => {
@@ -121,7 +141,7 @@ function Tasks() {
                     </p>
                   )}
 
-                  <div className="mt-4 flex gap-3 text-sm">
+                  <div className="mt-4 flex flex-wrap gap-3 text-sm">
                     <span>
                       Prioridad: {task.priority}
                     </span>
@@ -129,9 +149,13 @@ function Tasks() {
                     <span>
                       Estado: {task.status}
                     </span>
-                  </div>
-                </div>
 
+                    <span>
+                      Categoría: {getCategoryName(task.categoryId)}
+                    </span>
+                  </div>
+                  
+                </div>
                 <div className="flex gap-3">
                 <Link
                     to={`/tasks/${task.id}/edit`}
