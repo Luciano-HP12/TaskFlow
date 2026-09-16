@@ -4,6 +4,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getTasks } from "../services/task.service";
 
+import {
+  CircleCheck,
+  CircleDashed,
+  Clock3,
+  Plus,
+  TriangleAlert,
+} from "lucide-react";
+
+
+import StatCard from "../components/StatCard";
+
 function Dashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -80,127 +91,150 @@ function Dashboard() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl p-8">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      {/* HEADER */}
+
+      <header className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-bold">
-            Bienvenido, {user?.name}
+          <p className="mb-1 text-sm font-medium text-slate-500">
+            Dashboard
+          </p>
+
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            Hola, {user?.name}
           </h1>
 
-          <p className="mt-2 text-gray-500">
+          <p className="mt-2 text-slate-500">
             Aquí tienes un resumen de tus tareas.
           </p>
         </div>
 
-        <div className="flex gap-3">
-          <Link
-            to="/tasks/new"
-            className="rounded-lg bg-black px-4 py-2 text-white"
-          >
-            Nueva tarea
-          </Link>
+        <Link
+          to="/tasks/new"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700"
+        >
+          <Plus size={18} />
+          Nueva tarea
+        </Link>
+      </header>
 
-          <button
-            onClick={handleLogout}
-            className="rounded-lg border px-4 py-2"
-          >
-            Cerrar sesión
-          </button>
-        </div>
-      </div>
+      {/* ERROR */}
 
       {error && (
-        <div className="mb-6 rounded-lg bg-red-100 p-3 text-red-700">
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <article className="rounded-xl border p-5">
-          <p className="text-sm text-gray-500">
-            Pendientes
-          </p>
+      {/* ESTADÍSTICAS */}
 
-          <p className="mt-2 text-3xl font-bold">
-            {pendingTasks}
-          </p>
-        </article>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          title="Pendientes"
+          value={pendingTasks}
+          icon={CircleDashed}
+          iconClassName="bg-amber-50 text-amber-600"
+        />
 
-        <article className="rounded-xl border p-5">
-          <p className="text-sm text-gray-500">
-            En progreso
-          </p>
+        <StatCard
+          title="En progreso"
+          value={inProgressTasks}
+          icon={Clock3}
+          iconClassName="bg-blue-50 text-blue-600"
+        />
 
-          <p className="mt-2 text-3xl font-bold">
-            {inProgressTasks}
-          </p>
-        </article>
+        <StatCard
+          title="Completadas"
+          value={completedTasks}
+          icon={CircleCheck}
+          iconClassName="bg-emerald-50 text-emerald-600"
+        />
 
-        <article className="rounded-xl border p-5">
-          <p className="text-sm text-gray-500">
-            Completadas
-          </p>
-
-          <p className="mt-2 text-3xl font-bold">
-            {completedTasks}
-          </p>
-        </article>
-
-        <article className="rounded-xl border p-5">
-          <p className="text-sm text-gray-500">
-            Vencidas
-          </p>
-
-          <p className="mt-2 text-3xl font-bold">
-            {overdueTasks}
-          </p>
-        </article>
+        <StatCard
+          title="Vencidas"
+          value={overdueTasks}
+          icon={TriangleAlert}
+          iconClassName="bg-red-50 text-red-600"
+        />
       </section>
 
-      <section className="mt-8 rounded-xl border p-6">
-        <div className="mb-5 flex items-center justify-between">
+      {/* PRÓXIMAS TAREAS */}
+
+      <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
           <div>
-            <h2 className="text-xl font-semibold">
+            <h2 className="font-semibold text-slate-900">
               Próximas tareas
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
-              Tus próximas fechas límite.
+            <p className="mt-1 text-sm text-slate-500">
+              Tareas pendientes ordenadas por fecha límite.
             </p>
           </div>
 
           <Link
             to="/tasks"
-            className="text-sm text-blue-600"
+            className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
           >
             Ver todas
           </Link>
         </div>
 
         {upcomingTasks.length === 0 ? (
-          <p className="text-gray-500">
-            No tienes próximas tareas con fecha límite.
-          </p>
+          <div className="px-6 py-12 text-center">
+            <CircleCheck
+              size={32}
+              className="mx-auto text-slate-300"
+            />
+
+            <p className="mt-3 font-medium text-slate-700">
+              Todo está bajo control
+            </p>
+
+            <p className="mt-1 text-sm text-slate-500">
+              No tienes próximas tareas con fecha límite.
+            </p>
+          </div>
         ) : (
-          <div className="space-y-3">
+          <div className="divide-y divide-slate-100">
             {upcomingTasks.map((task) => (
-              <article
+              <div
                 key={task.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4"
+                className="flex flex-col justify-between gap-3 px-6 py-4 transition hover:bg-slate-50 sm:flex-row sm:items-center"
               >
                 <div>
-                  <h3 className="font-medium">
+                  <p className="font-medium text-slate-900">
                     {task.title}
-                  </h3>
-
-                  <p className="mt-1 text-sm text-gray-500">
-                    {task.status === "PENDING"
-                      ? "Pendiente"
-                      : "En progreso"}
                   </p>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        task.priority === "HIGH"
+                          ? "bg-red-50 text-red-700"
+                          : task.priority === "MEDIUM"
+                            ? "bg-amber-50 text-amber-700"
+                            : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {task.priority === "HIGH"
+                        ? "Alta"
+                        : task.priority === "MEDIUM"
+                          ? "Media"
+                          : "Baja"}
+                    </span>
+
+                    <span className="text-xs text-slate-500">
+                      {task.status === "PENDING"
+                        ? "Pendiente"
+                        : "En progreso"}
+                    </span>
+                  </div>
                 </div>
 
-                <p className="text-sm font-medium">
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <Clock3 size={16} />
+
                   {new Date(task.dueDate).toLocaleString(
                     "es-PE",
                     {
@@ -208,29 +242,13 @@ function Dashboard() {
                       timeStyle: "short",
                     }
                   )}
-                </p>
-              </article>
+                </div>
+              </div>
             ))}
           </div>
         )}
       </section>
-
-      <section className="mt-8 flex flex-wrap gap-3">
-        <Link
-          to="/tasks"
-          className="rounded-lg border px-4 py-2"
-        >
-          Administrar tareas
-        </Link>
-
-        <Link
-          to="/categories"
-          className="rounded-lg border px-4 py-2"
-        >
-          Administrar categorías
-        </Link>
-      </section>
-    </main>
+    </div>
   );
 }
 

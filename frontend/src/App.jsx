@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Tasks from "./pages/Tasks";
 import TaskForm from "./pages/TaskForm";
 import Categories from "./pages/Categories";
+import AppLayout from "./layouts/AppLayout";
 
 function App() {
   return (
@@ -21,58 +22,37 @@ function App() {
           path="/"
           element={<Navigate to="/login" replace />}
         />
+      
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
         <Route
-          path="/login"
-          element={<Login />}
-        />
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/dashboard" element={<Dashboard />} />
 
-        <Route
-          path="/register"
-          element={<Register />}
-        />
+          <Route path="/tasks" element={<Tasks />} />
 
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tasks"
-          element={
-            <ProtectedRoute>
-              <Tasks />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tasks/new"
-          element={
-            <ProtectedRoute>
-              <TaskForm />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/tasks/new"
+            element={<TaskForm />}
+          />
 
-        <Route
-          path="/tasks/:id/edit"
-          element={
-            <ProtectedRoute>
-              <TaskForm />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/categories"
-          element={
-            <ProtectedRoute>
-              <Categories />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/tasks/:id/edit"
+            element={<TaskForm />}
+          />
+
+          <Route
+            path="/categories"
+            element={<Categories />}
+          />
+        </Route>     
+
       </Routes>
     </BrowserRouter>
   );
