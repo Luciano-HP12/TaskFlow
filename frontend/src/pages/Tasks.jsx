@@ -13,21 +13,34 @@ function Tasks() {
   const [error, setError] = useState("");
   const [categories, setCategories] = useState([]);
 
-  async function loadTasks() {
+const [filters, setFilters] = useState({
+  search: "",
+  status: "",
+  priority: "",
+  category: "",
+  sort: "createdAt",
+});
+
+  async function loadTasks(currentFilters = filters) {
     try {
       setError("");
 
-      const [tasksData, categoriesData] = await Promise.all([
-        getTasks(),
-        getCategories(),
-      ]);
+      const data = await getTasks(currentFilters);
 
-      setTasks(tasksData);
-      setCategories(categoriesData);
+      setTasks(data);
     } catch (error) {
       setError(error.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadCategories() {
+    try {
+      const data = await getCategories();
+      setCategories(data);
+    } catch (error) {
+      setError(error.message);
     }
   }
 
@@ -45,8 +58,37 @@ function Tasks() {
 
   useEffect(() => {
     loadTasks();
+    loadCategories();
   }, []);
 
+  function handleFilterChange(event) {
+    const { name, value } = event.target;
+
+    setFilters((currentFilters) => ({
+      ...currentFilters,
+      [name]: value,
+    }));
+  }
+
+  async function handleApplyFilters(event) {
+    event.preventDefault();
+
+    await loadTasks(filters);
+  }
+
+  async function handleClearFilters() {
+    const emptyFilters = {
+      search: "",
+      status: "",
+      priority: "",
+      category: "",
+      sort: "createdAt",
+    };
+
+    setFilters(emptyFilters);
+
+    await loadTasks(emptyFilters);
+  }
   async function handleStatusChange(taskId, status) {
     try {
       const updatedTask = await updateTaskStatus(
@@ -109,6 +151,155 @@ function Tasks() {
             Nueva tarea
         </Link>
       </div>
+
+      <form
+        onSubmit={handleApplyFilters}
+        className="mb-8 rounded-xl border p-5"
+      >
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <div>
+            <label
+              htmlFor="search"
+              className="mb-1 block text-sm font-medium"
+            >
+              Buscar
+            </label>
+
+            <input
+              id="search"
+              name="search"
+              type="text"
+              value={filters.search}
+              onChange={handleFilterChange}
+              placeholder="Buscar tarea..."
+              className="w-full rounded-lg border p-2"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="status"
+              className="mb-1 block text-sm font-medium"
+            >
+              Estado
+            </label>
+
+            <select
+              id="status"
+              name="status"
+              value={filters.status}
+              onChange={handleFilterChange}
+              className="w-full rounded-lg border p-2"
+            >
+              <option value="">Todos</option>
+              <option value="PENDING">Pendiente</option>
+              <option value="IN_PROGRESS">
+                En progreso
+              </option>
+              <option value="COMPLETED">
+                Completada
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="priority"
+              className="mb-1 block text-sm font-medium"
+            >
+              Prioridad
+            </label>
+
+            <select
+              id="priority"
+              name="priority"
+              value={filters.priority}
+              onChange={handleFilterChange}
+              className="w-full rounded-lg border p-2"
+            >
+              <option value="">Todas</option>
+              <option value="LOW">Baja</option>
+              <option value="MEDIUM">Media</option>
+              <option value="HIGH">Alta</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="category"
+              className="mb-1 block text-sm font-medium"
+            >
+              Categoría
+            </label>
+
+            <select
+              id="category"
+              name="category"
+              value={filters.category}
+              onChange={handleFilterChange}
+              className="w-full rounded-lg border p-2"
+            >
+              <option value="">Todas</option>
+
+              {categories.map((category) => (
+                <option
+                  key={category.id}
+                  value={category.id}
+                >
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="sort"
+              className="mb-1 block text-sm font-medium"
+            >
+              Ordenar
+            </label>
+
+            <select
+              id="sort"
+              name="sort"
+              value={filters.sort}
+              onChange={handleFilterChange}
+              className="w-full rounded-lg border p-2"
+            >
+              <option value="createdAt">
+                Más recientes
+              </option>
+
+              <option value="dueDate">
+                Fecha límite
+              </option>
+
+              <option value="priority">
+                Prioridad
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4 flex gap-3">
+          <button
+            type="submit"
+            className="rounded-lg bg-black px-4 py-2 text-white"
+          >
+            Aplicar filtros
+          </button>
+
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            className="rounded-lg border px-4 py-2"
+          >
+            Limpiar
+          </button>
+        </div>
+      </form>
+
 
       {error && (
         <div className="mb-6 rounded-lg bg-red-100 p-3 text-red-700">

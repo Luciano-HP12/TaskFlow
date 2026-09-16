@@ -14,8 +14,36 @@ async function handleResponse(response) {
   return data;
 }
 
-export async function getTasks() {
-  const response = await fetch(`${API_URL}/tasks`, {
+export async function getTasks(filters = {}) {
+  const params = new URLSearchParams();
+
+  if (filters.search) {
+    params.append("search", filters.search);
+  }
+
+  if (filters.status) {
+    params.append("status", filters.status);
+  }
+
+  if (filters.priority) {
+    params.append("priority", filters.priority);
+  }
+
+  if (filters.category) {
+    params.append("category", filters.category);
+  }
+
+  if (filters.sort) {
+    params.append("sort", filters.sort);
+  }
+
+  const queryString = params.toString();
+
+  const url = queryString
+    ? `${API_URL}/tasks?${queryString}`
+    : `${API_URL}/tasks`;
+
+  const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${getToken()}`,
     },

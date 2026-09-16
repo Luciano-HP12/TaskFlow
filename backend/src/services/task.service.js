@@ -28,10 +28,72 @@ export async function createTask(userId, taskData) {
   return task;
 }
 
-export async function getTasksByUser(userId) {
-  const tasks = await db.orm.public.Task
+export async function getTasksByUser(userId, filters = {}) {
+  let tasks = await db.orm.public.Task
     .where({ userId })
     .all();
+
+  if (filters.status) {
+    tasks = tasks.filter(
+      (task) => task.status === filters.status
+    );
+  }
+
+  if (filters.priority) {
+    tasks = tasks.filter(
+      (task) => task.priority === filters.priority
+    );
+  }
+
+  if (filters.category) {
+    tasks = tasks.filter(
+      (task) => task.categoryId === filters.category
+    );
+  }
+
+  if (filters.search) {
+    const search = filters.search.toLocaleLowerCase("es");
+
+    tasks = tasks.filter((task) =>
+      task.title
+        .toLocaleLowerCase("es")
+        .includes(search)
+    );
+  }
+
+  if (filters.sort === "createdAt") {
+    tasks.sort(
+      (a, b) =>
+        new Date(b.createdAt) - new Date(a.createdAt)
+    );
+  }
+
+  if (filters.sort === "dueDate") {
+    tasks.sort((a, b) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+
+      return (
+        new Date(a.dueDate) -
+        new Date(b.dueDate)
+      );
+    });
+  }
+
+  if (filters.sort === "priority") {
+    const priorityOrder = {
+      HIGH: 1,
+      MEDIUM: 2,
+      LOW: 3,
+    };
+
+    tasks.sort(
+      (a, b) =>
+        priorityOrder[a.priority] -
+        priorityOrder[b.priority]
+    );
+  }
 
   return tasks;
 }

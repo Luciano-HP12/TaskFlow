@@ -2,6 +2,7 @@ import {
   createTaskSchema,
   updateTaskSchema,
   updateTaskStatusSchema,
+  taskQuerySchema,
 } from "../validators/task.validator.js";
 import {
   createTask,
@@ -52,7 +53,23 @@ export async function create(req, res) {
 
 export async function getAll(req, res) {
   try {
-    const tasks = await getTasksByUser(req.user.id);
+    const validation = taskQuerySchema.safeParse(req.query);
+
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        message: "Filtros inválidos",
+        errors: validation.error.issues.map((issue) => ({
+          field: issue.path.join("."),
+          message: issue.message,
+        })),
+      });
+    }
+
+    const tasks = await getTasksByUser(
+      req.user.id,
+      validation.data
+    );
 
     return res.status(200).json({
       success: true,

@@ -76,3 +76,24 @@ export const updateTaskStatusSchema = z.object({
     }
   ),
 });
+
+export const taskQuerySchema = z.object({
+  search: z.string().trim().optional(),
+
+  status: z
+    .enum(["PENDING", "IN_PROGRESS", "COMPLETED"])
+    .optional(),
+
+  priority: z
+    .enum(["LOW", "MEDIUM", "HIGH"])
+    .optional(),
+
+  category: z
+    .string()
+    .uuid("La categoría no es válida")
+    .optional(),
+
+  sort: z
+    .enum(["createdAt", "dueDate", "priority"])
+    .optional(),
+});
