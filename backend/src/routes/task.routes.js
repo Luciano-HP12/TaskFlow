@@ -1,5 +1,8 @@
 import { Router } from "express";
+
 import { authenticate } from "../middlewares/auth.middleware.js";
+import { validateUuidParam } from "../middlewares/validateUuid.middleware.js";
+
 import {
   create,
   getAll,
@@ -12,11 +15,16 @@ import {
 const router = Router();
 
 router.get("/", authenticate, getAll);
-router.get("/:id", authenticate, getById);
 router.post("/", authenticate, create);
-router.put("/:id", authenticate, update);
-router.delete("/:id", authenticate, remove);
 
-router.patch("/:id/status", authenticate, updateStatus);
+router.get("/:id", authenticate, validateUuidParam, getById);
+router.put("/:id", authenticate, validateUuidParam, update);
+router.delete("/:id", authenticate, validateUuidParam, remove);
+router.patch(
+  "/:id/status",
+  authenticate,
+  validateUuidParam,
+  updateStatus
+);
 
 export default router;

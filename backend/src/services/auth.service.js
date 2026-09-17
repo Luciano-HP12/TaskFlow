@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
-import { db } from "../prisma/db.ts";
 import jwt from "jsonwebtoken";
+
+import { db } from "../prisma/db.ts";
+import { env } from "../config/env.js";
 
 export async function registerUser({ name, email, password }) {
   const existingUser = await db.orm.public.User
@@ -8,7 +10,9 @@ export async function registerUser({ name, email, password }) {
     .first();
 
   if (existingUser) {
-    const error = new Error("El correo electrónico ya está registrado");
+    const error = new Error(
+      "El correo electrónico ya está registrado"
+    );
     error.statusCode = 409;
     throw error;
   }
@@ -55,9 +59,9 @@ export async function loginUser({ email, password }) {
     {
       userId: user.id,
     },
-    process.env.JWT_SECRET,
+    env.jwtSecret,
     {
-      expiresIn: process.env.JWT_EXPIRES_IN || "1h",
+      expiresIn: env.jwtExpiresIn,
     }
   );
 
