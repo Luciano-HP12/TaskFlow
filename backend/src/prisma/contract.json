@@ -488,6 +488,13 @@
                   "name": "category_userId_idx_a489d58a",
                   "prefix": "category_userId_idx",
                   "unique": false
+                },
+                {
+                  "expression": "\"userId\", lower(name)",
+                  "name": "category_userId_name_lower_key_a2fa32b8",
+                  "prefix": "category_userId_name_lower_key",
+                  "type": "btree",
+                  "unique": true
                 }
               ],
               "primaryKey": {
@@ -495,14 +502,7 @@
                   "id"
                 ]
               },
-              "uniques": [
-                {
-                  "columns": [
-                    "userId",
-                    "name"
-                  ]
-                }
-              ]
+              "uniques": []
             },
             "task": {
               "checks": [
@@ -739,7 +739,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "096e34299778ef2c7af49a7dd88e59409a7249012a6cb0e15d0da4687e7aa6d8",
+    "storageHash": "2c5a947216dd9582f5e1770e1044bfb1a49198f1661d5c43cc0e887a678921b8",
     "types": {
       "Uuid": {
         "codecId": "pg/uuid@1",

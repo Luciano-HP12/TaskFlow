@@ -29,57 +29,45 @@ export async function createTask(userId, taskData) {
 }
 
 export async function getTasksByUser(userId, filters = {}) {
-  let tasks = await db.orm.public.Task
-    .where({ userId })
-    .all();
+  let query = db.orm.public.Task.where({ userId });
 
   if (filters.status) {
-    tasks = tasks.filter(
-      (task) => task.status === filters.status
-    );
+    query = query.where({
+      status: filters.status,
+    });
   }
 
   if (filters.priority) {
-    tasks = tasks.filter(
-      (task) => task.priority === filters.priority
-    );
+    query = query.where({
+      priority: filters.priority,
+    });
   }
 
   if (filters.category) {
-    tasks = tasks.filter(
-      (task) => task.categoryId === filters.category
-    );
+    query = query.where({
+      categoryId: filters.category,
+    });
   }
 
   if (filters.search) {
-    const search = filters.search.toLocaleLowerCase("es");
-
-    tasks = tasks.filter((task) =>
-      task.title
-        .toLocaleLowerCase("es")
-        .includes(search)
+    query = query.where((task) =>
+      task.title.ilike(`%${filters.search}%`)
     );
   }
 
   if (filters.sort === "createdAt") {
-    tasks.sort(
-      (a, b) =>
-        new Date(b.createdAt) - new Date(a.createdAt)
+    query = query.orderBy((task) =>
+      task.createdAt.desc()
     );
   }
 
   if (filters.sort === "dueDate") {
-    tasks.sort((a, b) => {
-      if (!a.dueDate && !b.dueDate) return 0;
-      if (!a.dueDate) return 1;
-      if (!b.dueDate) return -1;
-
-      return (
-        new Date(a.dueDate) -
-        new Date(b.dueDate)
-      );
-    });
+    query = query.orderBy((task) =>
+      task.dueDate.asc()
+    );
   }
+
+  let tasks = await query.all();
 
   if (filters.sort === "priority") {
     const priorityOrder = {

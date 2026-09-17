@@ -1,0 +1,463 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.category",
+    "label": "Create table \"category\"",
+    "summary": "Creates table \"category\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "category"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"category\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"category\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"category\"",
+        "sql": "CREATE TABLE \"public\".\"category\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" \"uuid\" NOT NULL,\n  \"name\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"userId\" \"uuid\" NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"category\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"category\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.task",
+    "label": "Create table \"task\"",
+    "summary": "Creates table \"task\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "task"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"task\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"task\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"task\"",
+        "sql": "CREATE TABLE \"public\".\"task\" (\n  \"categoryId\" \"uuid\",\n  \"completedAt\" timestamptz,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"dueDate\" timestamptz,\n  \"id\" \"uuid\" NOT NULL,\n  \"priority\" text DEFAULT 'MEDIUM' NOT NULL,\n  \"status\" text DEFAULT 'PENDING' NOT NULL,\n  \"title\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"userId\" \"uuid\" NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"task_priority_check_759b7c5e\" CHECK (\"priority\" IN ('LOW', 'MEDIUM', 'HIGH')),\n  CONSTRAINT \"task_status_check_c95d195d\" CHECK (\"status\" IN ('PENDING', 'IN_PROGRESS', 'COMPLETED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"task\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"task\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.user",
+    "label": "Create table \"user\"",
+    "summary": "Creates table \"user\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"user\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"user\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"user\"",
+        "sql": "CREATE TABLE \"public\".\"user\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"id\" \"uuid\" NOT NULL,\n  \"name\" text NOT NULL,\n  \"passwordHash\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"user\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"user\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.category.category_userId_name_key",
+    "label": "Add unique constraint on \"category\" (userId, name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "category_userId_name_key",
+        "table": "category"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"category_userId_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "category_userId_name_key",
+          "public",
+          "\"public\".\"category\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"category_userId_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"category\" ADD CONSTRAINT \"category_userId_name_key\" UNIQUE (\"userId\", \"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"category_userId_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "category_userId_name_key",
+          "public",
+          "\"public\".\"category\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.user.user_email_key",
+    "label": "Add unique constraint on \"user\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "user_email_key",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"user_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_email_key",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"user_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ADD CONSTRAINT \"user_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"user_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_email_key",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.category.category_userId_idx_a489d58a",
+    "label": "Create index \"category_userId_idx_a489d58a\" on \"category\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "category_userId_idx_a489d58a",
+        "table": "category"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"category_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"category_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"category_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"category_userId_idx_a489d58a\" ON \"public\".\"category\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"category_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"category_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.task.task_categoryId_idx_15c304f2",
+    "label": "Create index \"task_categoryId_idx_15c304f2\" on \"task\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "task_categoryId_idx_15c304f2",
+        "table": "task"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"task_categoryId_idx_15c304f2\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"task_categoryId_idx_15c304f2\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"task_categoryId_idx_15c304f2\"",
+        "sql": "CREATE INDEX \"task_categoryId_idx_15c304f2\" ON \"public\".\"task\" (\"categoryId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"task_categoryId_idx_15c304f2\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"task_categoryId_idx_15c304f2\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.task.task_userId_idx_a489d58a",
+    "label": "Create index \"task_userId_idx_a489d58a\" on \"task\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "task_userId_idx_a489d58a",
+        "table": "task"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"task_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"task_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"task_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"task_userId_idx_a489d58a\" ON \"public\".\"task\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"task_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"task_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.category.category_userId_fkey",
+    "label": "Add foreign key \"category_userId_fkey\" on \"category\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "category_userId_fkey",
+        "table": "category"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"category_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "category_userId_fkey",
+          "public",
+          "\"public\".\"category\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"category_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"category\"\nADD CONSTRAINT \"category_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"user\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"category_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "category_userId_fkey",
+          "public",
+          "\"public\".\"category\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.task.task_userId_fkey",
+    "label": "Add foreign key \"task_userId_fkey\" on \"task\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "task_userId_fkey",
+        "table": "task"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"task_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "task_userId_fkey",
+          "public",
+          "\"public\".\"task\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"task_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"task\"\nADD CONSTRAINT \"task_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"user\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"task_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "task_userId_fkey",
+          "public",
+          "\"public\".\"task\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.task.task_categoryId_fkey",
+    "label": "Add foreign key \"task_categoryId_fkey\" on \"task\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "task_categoryId_fkey",
+        "table": "task"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"task_categoryId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "task_categoryId_fkey",
+          "public",
+          "\"public\".\"task\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"task_categoryId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"task\"\nADD CONSTRAINT \"task_categoryId_fkey\"\nFOREIGN KEY (\"categoryId\")\nREFERENCES \"public\".\"category\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"task_categoryId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "task_categoryId_fkey",
+          "public",
+          "\"public\".\"task\""
+        ]
+      }
+    ]
+  }
+]

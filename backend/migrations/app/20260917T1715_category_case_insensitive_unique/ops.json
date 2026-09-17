@@ -1,0 +1,83 @@
+[
+  {
+    "id": "dropConstraint.category.category_userId_name_key",
+    "label": "Drop constraint \"category_userId_name_key\" on \"category\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "category_userId_name_key",
+        "table": "category"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"category_userId_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "category_userId_name_key",
+          "public",
+          "\"public\".\"category\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop constraint \"category_userId_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"category\" DROP CONSTRAINT \"category_userId_name_key\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"category_userId_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "category_userId_name_key",
+          "public",
+          "\"public\".\"category\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.category.category_userId_name_lower_key_a2fa32b8",
+    "label": "Create index \"category_userId_name_lower_key_a2fa32b8\" on \"category\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "category_userId_name_lower_key_a2fa32b8",
+        "table": "category"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"category_userId_name_lower_key_a2fa32b8\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"category_userId_name_lower_key_a2fa32b8\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"category_userId_name_lower_key_a2fa32b8\"",
+        "sql": "CREATE UNIQUE INDEX \"category_userId_name_lower_key_a2fa32b8\" ON \"public\".\"category\" (\"userId\", lower(name))",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"category_userId_name_lower_key_a2fa32b8\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"category_userId_name_lower_key_a2fa32b8\""
+        ]
+      }
+    ]
+  }
+]

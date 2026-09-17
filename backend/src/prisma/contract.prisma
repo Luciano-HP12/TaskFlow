@@ -45,7 +45,12 @@ model Category {
   createdAt TimestamptzString @default(now())
   updatedAt temporal.updatedAtString()
 
-  @@unique([userId, name])
+  @@index(
+    expression: "\"userId\", lower(name)",
+    name: "category_userId_name_lower_key",
+    type: "btree",
+    unique: true
+  )
 }
 
 model Task {
