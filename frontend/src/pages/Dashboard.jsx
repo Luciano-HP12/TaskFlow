@@ -1,50 +1,50 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getTasks } from "../services/task.service";
-
 import {
   CircleCheck,
   CircleDashed,
   Clock3,
   Plus,
+  RefreshCw,
   TriangleAlert,
 } from "lucide-react";
-
-
 import StatCard from "../components/StatCard";
 
 function Dashboard() {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function loadDashboard() {
-      try {
-        setError("");
+  /* =========================================
+     CARGAR DASHBOARD
+  ========================================= */
 
-        const data = await getTasks();
+  async function loadDashboard() {
+    try {
+      setError("");
+      setLoading(true);
 
-        setTasks(data);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
+      const data = await getTasks();
+
+      setTasks(data);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
+  }
 
+  useEffect(() => {
     loadDashboard();
   }, []);
 
-  function handleLogout() {
-    logout();
-    navigate("/login");
-  }
+  /* =========================================
+     ESTADÍSTICAS
+  ========================================= */
 
   const pendingTasks = tasks.filter(
     (task) => task.status === "PENDING"
@@ -61,7 +61,9 @@ function Dashboard() {
   const now = new Date();
 
   const overdueTasks = tasks.filter((task) => {
-    if (!task.dueDate) return false;
+    if (!task.dueDate) {
+      return false;
+    }
 
     return (
       task.status !== "COMPLETED" &&
@@ -71,8 +73,13 @@ function Dashboard() {
 
   const upcomingTasks = tasks
     .filter((task) => {
-      if (!task.dueDate) return false;
-      if (task.status === "COMPLETED") return false;
+      if (!task.dueDate) {
+        return false;
+      }
+
+      if (task.status === "COMPLETED") {
+        return false;
+      }
 
       return new Date(task.dueDate) >= now;
     })
@@ -82,13 +89,95 @@ function Dashboard() {
     )
     .slice(0, 5);
 
+  /* =========================================
+     LOADING
+  ========================================= */
+
   if (loading) {
     return (
-      <main className="p-8">
-        <p>Cargando dashboard...</p>
-      </main>
+      <div>
+        <header className="mb-8">
+          <p className="mb-1 text-sm font-medium text-slate-500">
+            Dashboard
+          </p>
+
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            Hola, {user?.name}
+          </h1>
+
+          <p className="mt-2 text-slate-500">
+            Estamos preparando el resumen de tus tareas.
+          </p>
+        </header>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <RefreshCw
+            size={24}
+            className="mx-auto animate-spin text-slate-400"
+          />
+
+          <p className="mt-3 text-sm text-slate-500">
+            Cargando dashboard...
+          </p>
+        </div>
+      </div>
     );
   }
+
+  /* =========================================
+     ERROR
+  ========================================= */
+
+  if (error) {
+    return (
+      <div>
+        <header className="mb-8">
+          <p className="mb-1 text-sm font-medium text-slate-500">
+            Dashboard
+          </p>
+
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            Hola, {user?.name}
+          </h1>
+
+          <p className="mt-2 text-slate-500">
+            Aquí tienes un resumen de tus tareas.
+          </p>
+        </header>
+
+        <div
+          role="alert"
+          className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center"
+        >
+          <TriangleAlert
+            size={30}
+            className="mx-auto text-red-500"
+          />
+
+          <h2 className="mt-4 font-semibold text-red-800">
+            No pudimos cargar el dashboard
+          </h2>
+
+          <p className="mx-auto mt-2 max-w-md text-sm text-red-700">
+            {error}
+          </p>
+
+          <button
+            type="button"
+            onClick={loadDashboard}
+            className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-red-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-800"
+          >
+            <RefreshCw size={16} />
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* =========================================
+     DASHBOARD
+  ========================================= */
 
   return (
     <div>
@@ -117,14 +206,6 @@ function Dashboard() {
           Nueva tarea
         </Link>
       </header>
-
-      {/* ERROR */}
-
-      {error && (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
-        </div>
-      )}
 
       {/* ESTADÍSTICAS */}
 

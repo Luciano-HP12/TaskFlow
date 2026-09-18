@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
 import {
   deleteTask,
   getTasks,
   updateTaskStatus,
 } from "../services/task.service";
-
 import { getCategories } from "../services/category.service";
-
 import {
   CalendarDays,
   Filter,
@@ -19,7 +16,6 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-
 import PriorityBadge from "../components/PriorityBadge";
 import StatusBadge from "../components/StatusBadge";
 import ConfirmModal from "../components/ConfirmModal";
@@ -33,6 +29,7 @@ function FilterSelect({
   name,
   value,
   onChange,
+  disabled,
   children,
 }) {
   return (
@@ -49,7 +46,8 @@ function FilterSelect({
         name={name}
         value={value}
         onChange={onChange}
-        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+        disabled={disabled}
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
       >
         {children}
       </select>
@@ -67,8 +65,12 @@ function Tasks() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Guarda el ID de la tarea cuyo estado se está actualizando.
+  const [updatingTaskId, setUpdatingTaskId] = useState(null);
 
   const [filters, setFilters] = useState({
     search: "",
@@ -104,7 +106,6 @@ function Tasks() {
   async function loadCategories() {
     try {
       const data = await getCategories();
-
       setCategories(data);
     } catch (error) {
       setError(error.message);
@@ -152,10 +153,18 @@ function Tasks() {
   async function handleApplyFilters(event) {
     event.preventDefault();
 
+    if (loading) {
+      return;
+    }
+
     await loadTasks(filters);
   }
 
   async function handleClearFilters() {
+    if (loading) {
+      return;
+    }
+
     const emptyFilters = {
       search: "",
       status: "",
@@ -174,8 +183,13 @@ function Tasks() {
   ====================================================== */
 
   async function handleStatusChange(taskId, status) {
+    if (updatingTaskId) {
+      return;
+    }
+
     try {
       setError("");
+      setUpdatingTaskId(taskId);
 
       const updatedTask = await updateTaskStatus(
         taskId,
@@ -189,6 +203,8 @@ function Tasks() {
       );
     } catch (error) {
       setError(error.message);
+    } finally {
+      setUpdatingTaskId(null);
     }
   }
 
@@ -197,29 +213,29 @@ function Tasks() {
   ====================================================== */
 
   async function handleDelete() {
-      if (!taskToDelete) {
-        return;
-      }
-
-      try {
-        setError("");
-        setDeleting(true);
-
-        await deleteTask(taskToDelete.id);
-
-        setTasks((currentTasks) =>
-          currentTasks.filter(
-            (task) => task.id !== taskToDelete.id
-          )
-        );
-
-        setTaskToDelete(null);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setDeleting(false);
-      }
+    if (!taskToDelete || deleting) {
+      return;
     }
+
+    try {
+      setError("");
+      setDeleting(true);
+
+      await deleteTask(taskToDelete.id);
+
+      setTasks((currentTasks) =>
+        currentTasks.filter(
+          (task) => task.id !== taskToDelete.id
+        )
+      );
+
+      setTaskToDelete(null);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   /* ======================================================
      INTERFAZ
@@ -257,7 +273,10 @@ function Tasks() {
       {/* ================= ERROR ================= */}
 
       {error && (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div
+          role="alert"
+          className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
           {error}
         </div>
       )}
@@ -293,7 +312,7 @@ function Tasks() {
             <div className="relative">
               <Search
                 size={17}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
               />
 
               <input
@@ -302,8 +321,9 @@ function Tasks() {
                 type="text"
                 value={filters.search}
                 onChange={handleFilterChange}
+                disabled={loading}
                 placeholder="Nombre de tarea..."
-                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
               />
             </div>
           </div>
@@ -315,6 +335,7 @@ function Tasks() {
             name="status"
             value={filters.status}
             onChange={handleFilterChange}
+            disabled={loading}
           >
             <option value="">Todos</option>
             <option value="PENDING">
@@ -335,6 +356,7 @@ function Tasks() {
             name="priority"
             value={filters.priority}
             onChange={handleFilterChange}
+            disabled={loading}
           >
             <option value="">Todas</option>
             <option value="HIGH">
@@ -355,6 +377,7 @@ function Tasks() {
             name="category"
             value={filters.category}
             onChange={handleFilterChange}
+            disabled={loading}
           >
             <option value="">Todas</option>
 
@@ -375,15 +398,14 @@ function Tasks() {
             name="sort"
             value={filters.sort}
             onChange={handleFilterChange}
+            disabled={loading}
           >
             <option value="createdAt">
               Más recientes
             </option>
-
             <option value="dueDate">
               Fecha límite
             </option>
-
             <option value="priority">
               Prioridad
             </option>
@@ -396,16 +418,21 @@ function Tasks() {
           <div className="flex flex-wrap gap-3">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700"
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Filter size={16} />
-              Aplicar filtros
+
+              {loading
+                ? "Aplicando..."
+                : "Aplicar filtros"}
             </button>
 
             <button
               type="button"
               onClick={handleClearFilters}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RotateCcw size={16} />
               Limpiar
@@ -455,7 +482,8 @@ function Tasks() {
           <button
             type="button"
             onClick={handleClearFilters}
-            className="mt-5 text-sm font-medium text-slate-900 hover:underline"
+            disabled={loading}
+            className="mt-5 text-sm font-medium text-slate-900 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
           >
             Limpiar filtros
           </button>
@@ -466,140 +494,158 @@ function Tasks() {
 
       {!loading && tasks.length > 0 && (
         <div className="space-y-4">
-          {tasks.map((task) => (
-            <article
-              key={task.id}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300"
-            >
-              <div className="flex flex-col justify-between gap-5 lg:flex-row">
-                {/* INFORMACIÓN */}
+          {tasks.map((task) => {
+            const isUpdating =
+              updatingTaskId === task.id;
 
-                <div className="min-w-0 flex-1">
-                  {/* BADGES */}
+            return (
+              <article
+                key={task.id}
+                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300"
+              >
+                <div className="flex flex-col justify-between gap-5 lg:flex-row">
+                  {/* INFORMACIÓN */}
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StatusBadge
-                      status={task.status}
-                    />
+                  <div className="min-w-0 flex-1">
+                    {/* BADGES */}
 
-                    <PriorityBadge
-                      priority={task.priority}
-                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge
+                        status={task.status}
+                      />
 
-                    {task.categoryId && (
-                      <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700 ring-1 ring-inset ring-violet-600/10">
-                        {getCategoryName(
-                          task.categoryId
-                        )}
-                      </span>
-                    )}
-                  </div>
+                      <PriorityBadge
+                        priority={task.priority}
+                      />
 
-                  {/* TÍTULO */}
-
-                  <h2 className="mt-3 text-lg font-semibold text-slate-900">
-                    {task.title}
-                  </h2>
-
-                  {/* DESCRIPCIÓN */}
-
-                  {task.description && (
-                    <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-                      {task.description}
-                    </p>
-                  )}
-
-                  {/* FECHA */}
-
-                  <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                    {task.dueDate ? (
-                      <div className="flex items-center gap-1.5">
-                        <CalendarDays size={16} />
-
-                        <span>
-                          {new Date(
-                            task.dueDate
-                          ).toLocaleString(
-                            "es-PE",
-                            {
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                            }
+                      {task.categoryId && (
+                        <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700 ring-1 ring-inset ring-violet-600/10">
+                          {getCategoryName(
+                            task.categoryId
                           )}
                         </span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5">
-                        <CalendarDays size={16} />
+                      )}
+                    </div>
 
-                        <span>
-                          Sin fecha límite
-                        </span>
-                      </div>
+                    {/* TÍTULO */}
+
+                    <h2 className="mt-3 text-lg font-semibold text-slate-900">
+                      {task.title}
+                    </h2>
+
+                    {/* DESCRIPCIÓN */}
+
+                    {task.description && (
+                      <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+                        {task.description}
+                      </p>
                     )}
+
+                    {/* FECHA */}
+
+                    <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                      {task.dueDate ? (
+                        <div className="flex items-center gap-1.5">
+                          <CalendarDays size={16} />
+
+                          <span>
+                            {new Date(
+                              task.dueDate
+                            ).toLocaleString(
+                              "es-PE",
+                              {
+                                dateStyle:
+                                  "medium",
+                                timeStyle:
+                                  "short",
+                              }
+                            )}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <CalendarDays size={16} />
+                          <span>
+                            Sin fecha límite
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ACCIONES */}
+
+                  <div className="flex flex-col gap-3 lg:min-w-48">
+                    <div>
+                      <label
+                        htmlFor={`status-${task.id}`}
+                        className="mb-1.5 block text-xs font-medium text-slate-500"
+                      >
+                        {isUpdating
+                          ? "Actualizando..."
+                          : "Cambiar estado"}
+                      </label>
+
+                      <select
+                        id={`status-${task.id}`}
+                        value={task.status}
+                        onChange={(event) =>
+                          handleStatusChange(
+                            task.id,
+                            event.target.value
+                          )
+                        }
+                        disabled={Boolean(
+                          updatingTaskId
+                        )}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                      >
+                        <option value="PENDING">
+                          Pendiente
+                        </option>
+
+                        <option value="IN_PROGRESS">
+                          En progreso
+                        </option>
+
+                        <option value="COMPLETED">
+                          Completada
+                        </option>
+                      </select>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Link
+                        to={`/tasks/${task.id}/edit`}
+                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                      >
+                        <Pencil size={15} />
+                        Editar
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setTaskToDelete(task)
+                        }
+                        disabled={Boolean(
+                          updatingTaskId
+                        )}
+                        className="inline-flex items-center justify-center rounded-xl border border-red-100 px-3 py-2 text-red-500 transition hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        title="Eliminar tarea"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                {/* ACCIONES */}
-
-                <div className="flex flex-col gap-3 lg:min-w-48">
-                  <div>
-                    <label
-                      htmlFor={`status-${task.id}`}
-                      className="mb-1.5 block text-xs font-medium text-slate-500"
-                    >
-                      Cambiar estado
-                    </label>
-
-                    <select
-                      id={`status-${task.id}`}
-                      value={task.status}
-                      onChange={(event) =>
-                        handleStatusChange(
-                          task.id,
-                          event.target.value
-                        )
-                      }
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
-                    >
-                      <option value="PENDING">
-                        Pendiente
-                      </option>
-
-                      <option value="IN_PROGRESS">
-                        En progreso
-                      </option>
-
-                      <option value="COMPLETED">
-                        Completada
-                      </option>
-                    </select>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Link
-                      to={`/tasks/${task.id}/edit`}
-                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-                    >
-                      <Pencil size={15} />
-                      Editar
-                    </Link>
-
-                    <button
-                      type="button"
-                      onClick={() => setTaskToDelete(task)}
-                      className="inline-flex items-center justify-center rounded-xl border border-red-100 px-3 py-2 text-red-500 transition hover:bg-red-50 hover:text-red-700"
-                      title="Eliminar tarea"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
+
+      {/* ================= MODAL ELIMINAR ================= */}
 
       <ConfirmModal
         open={Boolean(taskToDelete)}
@@ -612,10 +658,13 @@ function Tasks() {
         confirmText="Eliminar tarea"
         loading={deleting}
         onConfirm={handleDelete}
-        onCancel={() => setTaskToDelete(null)}
+        onCancel={() => {
+          if (!deleting) {
+            setTaskToDelete(null);
+          }
+        }}
       />
     </div>
-    
   );
 }
 
